@@ -76,11 +76,12 @@ if __name__ == "__main__":
     log_dict = {}
     err_dict = {}
 
-    # for etf in tickers:
-    #    print etf
-    for i in range(20):
-        print i, tickers[i]
-        etf = tickers[i]
+    for etf in tickers:
+        print etf
+    # for i in range(20):
+    #     etf = tickers[i]
+    #     print i, tickers[i]
+
         try:
             # f = pandas.io.data.DataReader(etf+'.mi', "yahoo", start="1980/1/1")
             f = pandas.io.data.DataReader(etf, "yahoo", start="1980/1/1")
@@ -89,7 +90,7 @@ if __name__ == "__main__":
             log_dict[etf] = str(f.first_valid_index())
             # save quotes to CSV
             f.to_csv(CSV_DIR + etf + '.csv')
-        except IOError as e:
+        except (IOError, UnicodeEncodeError) as e:
             print etf + ' :' + str(e)
             # store error in a dict
             err_dict[etf] = str(e)
@@ -104,6 +105,9 @@ if __name__ == "__main__":
         json.dump(err_dict, errfile, indent=4)
     errfile.close()
 
+    print '========== END ========='
+    print 'ETFs downloaded: ' + str(len(log_dict))
+    print 'ETFs NOT downloaded: ' + str(len(err_dict))
 
     # for i in range(10):
     #     print i, tickers[i]
