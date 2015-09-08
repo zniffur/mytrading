@@ -2,10 +2,15 @@ import urllib2
 import re
 
 from bs4 import BeautifulSoup
+import pandas.io.data
 import pandas as pd
+import json
+import matplotlib.pyplot as plt
 
-
-def get_etf_tickers():
+CSV_DIR = './csv/'
+    
+    
+def get_etf_tickers_teleborsa():
     # Scrapes list of ETF from teleborsa. Returns a dict with tickers as keys and name
     # and ISIN as values.
 
@@ -28,21 +33,57 @@ def get_etf_tickers():
     return etfs
 
 
-def get_etf_tickers_2():
+def get_etf_tickers():
     # read from borsaitaliana.it official ETF list in xls.
     # returns a DataFrame containing ISIN, Name, Trading Code,
     # Reuters Code (Yahoo code), Bloomberg code and Area of ETF
 
     df = pd.read_excel('infoproviders.xls', header=7)
-    return df
+    tickers_json_str = df['Reuters RIC (Italy)'].to_json(None, orient='records')
+    tickers = json.loads(tickers_json_str)
+    return df, tickers
 
-if __name__ == "__main__":
 
-    import pandas.io.data
+def get(tickers, start, end):
+    def data(ticker):
+        try:
+            return pandas.io.data.DataReader(ticker, 'yahoo', start, end)
+        except (IOError, UnicodeEncodeError) as e:
+            print ticker + ' :' + str(e)
+    datas = map(data, tickers)
+    return pd.concat(datas, keys=tickers, names=['Ticker','Date'])
 
-    # etfs = get_etf_tickers()
+
+def load(tickers):
+    def data(ticker):
+        try:
+            return pd.read_csv(CSV_DIR + ticker + '.csv', index_col=0)
+        except IOError as e:
+            print ticker + '.csv: ' + str(e)
+    datas = map(data, tickers)
+    return pd.concat(datas, keys=tickers, names=['Ticker','Date'])
+
+
+def render_scatter_plot(data, x_stock_name, 
+                        y_stock_name, xlim=None, ylim=None):
+    fig = plt.figure(figsize=(12,8))
+    ax = fig.add_subplot(111)
+    ax.scatter(data[x_stock_name], data[y_stock_name])
+    if xlim is not None: ax.set_xlim(xlim)
+    ax.autoscale(False)
+    ax.vlines(0, -10, 10)
+    ax.hlines(0, -10, 10)
+    ax.plot((-10, 10), (-10, 10))
+    ax.set_xlabel(x_stock_name)
+    ax.set_ylabel(y_stock_name)
+
+
+if __name__ == '__main__':
 
     import json
+    # etfs = get_etf_tickers()
+
+    
     # # write etfs to json file
     # with open('etfs.json', 'w') as fp:
     #     json.dump(etfs, fp, indent=4)
@@ -60,12 +101,10 @@ if __name__ == "__main__":
     # #tickers = list(etfs.iterkeys())
     # tickers = etfs.keys()
 
-    etfs = get_etf_tickers_2()
-    tickers_json_str = etfs['Reuters RIC (Italy)'].to_json(None, orient='records')
-    tickers = json.loads(tickers_json_str)
+    etfs, tickers = get_etf_tickers()
 
     # Create folder to store CSVs
-    CSV_DIR = './csv/'
+
     import os
     try:
         os.mkdir(CSV_DIR)
@@ -129,12 +168,13 @@ if __name__ == "__main__":
     
     
     '''
-    Analyse log file for start date
+    Analyse log file for start date, writing only oldest tickers to a file
     '''
     with open('log_yahoo.txt', 'r') as fp:
         myjson = json.load(fp)
     fp.close()
     df = pd.DataFrame.from_dict(myjson, orient='index')
+
     df.columns = ['start_date']
     df.sort_index(by='start_date')
     # Filtering: start date before a certain date
@@ -187,11 +227,6 @@ if __name__ == "__main__":
     print '========== END ========='
     print 'ETFs downloaded: ' + str(len(log_dict))
     print 'ETFs NOT downloaded: ' + str(len(err_dict))
-    
-    
-    
-
-
     
     
     
