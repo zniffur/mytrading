@@ -99,21 +99,22 @@ if __name__ == '__main__':
     aaplMpct_chg.hist(bins=50, figsize=(12,8));
     aaplMpct_chg.describe(percentiles=[0.025, 0.5, 0.975])
     
-    # ----- get some info on more volatile stocks -----
+    # ----- get some info on more exchanged stocks -----
     volumes = all_data[['Volume']].reset_index()
     daily_volume = volumes.pivot('Date', 'Ticker', 'Volume')
     vol_mean = pd.DataFrame(daily_volume.mean(), columns=['vol_mean'])
-    more_vola = vol_mean.sort_index(by='vol_mean', ascending=False)
-    it_more_vola_tickers = more_vola[:12].index.tolist()  # todo: > valore medio
+    more_vol = vol_mean.sort_index(by='vol_mean', ascending=False)
+    
+    it_more_vol_tickers = more_vol[:12].index.tolist()  # todo: > valore medio
 
     # MA of volumes
-    rvol = pd.rolling_mean(daily_volume[it_more_vola_tickers],60)
+    rvol = pd.rolling_mean(daily_volume[it_more_vol_tickers],60)
     rvol.plot()
     
     # find benchmark are for more volatile ETFs
     etfs, tickers = get_etf_tickers.get_etf_tickers()
     etfs2 = etfs.set_index('Reuters RIC (Italy)')
-    etfs2.loc[it_more_vola_tickers]['Area Benchmark']
+    etfs2.loc[it_more_vol_tickers]['Area Benchmark']
     
     # filter oldest AND more volatile
     df = pd.read_csv('csv/oldest_etfs.csv')
