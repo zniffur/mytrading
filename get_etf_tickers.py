@@ -6,6 +6,7 @@ import pandas.io.data
 import pandas as pd
 import json
 import matplotlib.pyplot as plt
+import numpy as np
 
 CSV_DIR = './csv/'
     
@@ -79,7 +80,7 @@ def render_scatter_plot(data, x_stock_name,
 
 
 if __name__ == '__main__':
-
+    '''
     import json
     # etfs = get_etf_tickers()
 
@@ -167,9 +168,9 @@ if __name__ == '__main__':
     #         print tickers[i] + ' :' + str(e)
     
     
-    '''
-    Analyse log file for start date, writing only oldest tickers to a file
-    '''
+
+    # --Analyse log file for start date, writing only oldest tickers to a file
+
     with open('log_yahoo.txt', 'r') as fp:
         myjson = json.load(fp)
     fp.close()
@@ -194,9 +195,9 @@ if __name__ == '__main__':
     
     
     
-    '''
-    GMR seekingalpha
-    '''
+
+    # ---- GMR seekingalpha
+    
     ticker_list = ['MDY','IEV','EEM','ILF','EPP','EDV','SHY']
     
     for etf in ticker_list:
@@ -227,6 +228,30 @@ if __name__ == '__main__':
     print '========== END ========='
     print 'ETFs downloaded: ' + str(len(log_dict))
     print 'ETFs NOT downloaded: ' + str(len(err_dict))
+
+    '''
+    
+    # Adding volume information to etfs data
+    # run in csv folder
+    CSV_DIR = 'csv/'
+    start_dates = []
+    volumes = []
+    etfs, tickers = get_etf_tickers()
+    for item in tickers:
+        try:
+            filename = CSV_DIR + item + '.csv'
+            etf = pd.read_csv(filename)
+            volumes.append(etf[-252:].mean().Volume)
+            start_dates.append(etf.Date[0])
+        except (IOError, UnicodeEncodeError) as e:
+            print item + ' :' + str(e)
+            volumes.append(np.nan)
+            start_dates.append(np.nan)
+    etfs['start_date'] = start_dates
+    etfs['volumes'] = volumes
+    
+                
+            
     
     
     
