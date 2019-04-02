@@ -1,17 +1,13 @@
 .idea/
-<<<<<<< HEAD
 __pycache__
 .ipynb*
 .pytest*
 .vscode
 .coverage
 .DS_Store
+*.pyc
 
 env
 analisi_mia
 csv
 
-=======
-.project
-.pydevproject
->>>>>>> 5e883aac6a634e6ad30a4c5328ee0075d0c60a66
