@@ -1,1 +1,12 @@
 .idea/
+__pycache__
+.ipynb*
+.pytest*
+.vscode
+.coverage
+.DS_Store
+
+env
+analisi_mia
+csv
+
