@@ -6,6 +6,7 @@ __pycache__
 .coverage
 .DS_Store
 *.pyc
+*.xlsx
 
 env
 analisi_mia
