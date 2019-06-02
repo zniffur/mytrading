@@ -1,6 +1,7 @@
 from tickers import get_one_ticker, get_tickers
 import datetime
 now = datetime.datetime.now().strftime("%Y-%m-%d")
+now = '2019-05-24'
 
 
 def test_one_ticker():
@@ -10,7 +11,7 @@ def test_one_ticker():
 
 
 def test_multiple_tickers():
-    ticker_list = ['SPY', 'IEF', 'VT', 'TLT', 'CSSX5E.MI']
+    ticker_list = ['SPY', 'IEF', 'VT', 'TLT', 'CSSPX.MI']
     df2 = get_tickers(ticker_list, start="1990-01-01", end="2019-11-01")
     assert (df2.loc[now] is not None)
 
