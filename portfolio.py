@@ -18,7 +18,7 @@ def read_etf_info():
 
 
 def read_quotes(lista):
-    
+
     df2 = read_etf_info()
     ticker10 = [x.upper()+'.MI' for x in lista]
     df4 = df2[df2.ticker.isin(ticker10)]
@@ -30,12 +30,19 @@ def read_quotes(lista):
     df100 = pd.DataFrame()
     for source in sources1:
         filename = WORKDIR + source + EXT
-        df_t = pd.read_csv(filename, usecols=[1,2,3,4,5,6], index_col=0, parse_dates=True, dayfirst=True)
-        df100 = df100.join(df_t.close,how='outer',rsuffix='_'+source)
-        
+        df_t = pd.read_csv(filename, usecols=[
+                           1, 2, 3, 4, 5, 6], index_col=0, parse_dates=True, dayfirst=True)
+        df100 = df100.join(df_t.close, how='outer', rsuffix='_'+source)
+
     df100.columns = ticker1
+
+    # correzione SMEA
+    if 'smea' in lista:
+        x1 = df100.smea.idxmin()
+        df100.smea.loc[x1] = df100.smea.loc[x1 - pd.Timedelta(days=1)]
+
     datebuone = pd.DataFrame(columns=['primaData'])
-    for col_name, data in df100.items(): 
+    for col_name, data in df100.items():
         a = data.first_valid_index()
         datebuone.loc[col_name] = a
 
