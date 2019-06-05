@@ -1,5 +1,7 @@
+import pandas as pd
 import scipy.optimize as sco
 import numpy as np
+import math
 
 
 def calcPortfolioPerf(weights, meanReturns, covMatrix, periods):
@@ -136,3 +138,85 @@ def findEfficientFrontier(meanReturns, covMatrix, rangeOfReturns, periods):
             meanReturns, covMatrix, ret, periods))
 
     return efficientPortfolios
+
+
+def do_mc_simulation(data, assets, numPortfolios, periods, riskFreeRate):
+    numAssets = len(assets)
+    ## *DAILY* returns
+    ## LOG
+    x = data/data.shift(1)
+    x.dropna(inplace=True)
+    returns = np.log(x)
+
+    ## PCT
+    #returns = norm_data.pct_change()
+    #returns.dropna(inplace=True)
+
+    meanDailyReturns = returns[assets].mean()
+    covMatrix = returns[assets].cov()
+    # meanDailyReturns
+
+    #Run MC simulation of numPortfolios portfolios
+
+    results = np.zeros((3,numPortfolios))
+
+    #Calculate portfolios
+
+    for i in range(numPortfolios):
+        #Draw numAssets random numbers and normalize them to be the portfolio weights
+
+        weights = np.random.random(numAssets)
+        weights /= np.sum(weights)
+
+        #Calculate expected return and volatility of portfolio
+
+        pret, pvar = calcPortfolioPerf(weights, meanDailyReturns, covMatrix, periods)
+
+        #Convert results to annual basis, calculate Sharpe Ratio, and store them
+
+        results[0,i] = pret
+        results[1,i] = pvar
+        results[2,i] = (results[0,i] - riskFreeRate)/results[1,i]
+
+    return results, meanDailyReturns, covMatrix
+
+
+def do_mc_randomwalk(pct_ret, num_mc_runs, num_years, riskFreeRate, periods):
+
+    u = pct_ret.maxSharpe.mean()
+    sigma = pct_ret.maxSharpe.std()
+
+    # Annualized returns
+    # MODO 1
+    #mu = (norm_data.maxSharpe.iloc[-1]/norm_data.maxSharpe.iloc[0]) ** (252/norm_data.shape[0]) - 1
+    #vol = sigma * math.sqrt(252)
+    #print(mu, vol)
+
+    # MODO 2
+    D = len(pct_ret.maxSharpe)
+    mu = pct_ret.maxSharpe.add(1).prod() ** (252 / D) - 1
+    vol = sigma * math.sqrt(252)
+    #print(mu, vol)
+
+    ### MONTECARLO random walk
+    mc_runs = pd.DataFrame()
+
+    for i in range(num_mc_runs):
+        # create list of daily returns using random normal distribution
+        daily_returns = np.random.normal((mu/periods), vol/math.sqrt(periods), periods * num_years)
+
+        random_walk = [1.0]
+        for x in daily_returns:
+            random_walk.append(random_walk[-1] * (1+x))
+
+        mc_runs[i] = random_walk
+
+    mc_runs_returns = mc_runs.pct_change()
+    mc_runs_returns.dropna(inplace=True)
+
+    D = len(mc_runs_returns)
+    ann_mc_returns = mc_runs_returns.add(1).prod() ** (periods / D) - 1
+    vol_mc_returns = mc_runs_returns.std() * math.sqrt(periods)
+    sharpe_mc_runs = (ann_mc_returns - riskFreeRate) / vol_mc_returns
+    
+    return mc_runs, ann_mc_returns, vol_mc_returns, sharpe_mc_runs
