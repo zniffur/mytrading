@@ -162,7 +162,7 @@ def do_mc_simulation(data, assets, numPortfolios, periods, riskFreeRate):
     results = np.zeros((3, numPortfolios))
 
     # Calculate portfolios
-    results = pd.DataFrame(columns=['ret', 'vol', 'sharpe']+assets)
+    results = pd.DataFrame(columns=['ret', 'vola', 'sharpe']+assets)
 
     for i in range(numPortfolios):
         # Draw numAssets random numbers and normalize them to be the portfolio weights
