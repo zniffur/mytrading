@@ -141,42 +141,51 @@ def findEfficientFrontier(meanReturns, covMatrix, rangeOfReturns, periods):
 
 
 def do_mc_simulation(data, assets, numPortfolios, periods, riskFreeRate):
+
     numAssets = len(assets)
-    ## *DAILY* returns
-    ## LOG
+    # *DAILY* returns
+    # LOG
     x = data/data.shift(1)
     x.dropna(inplace=True)
     returns = np.log(x)
 
-    ## PCT
+    # PCT
     #returns = norm_data.pct_change()
-    #returns.dropna(inplace=True)
+    # returns.dropna(inplace=True)
 
     meanDailyReturns = returns[assets].mean()
     covMatrix = returns[assets].cov()
     # meanDailyReturns
 
-    #Run MC simulation of numPortfolios portfolios
+    # Run MC simulation of numPortfolios portfolios
 
-    results = np.zeros((3,numPortfolios))
+    results = np.zeros((3, numPortfolios))
 
-    #Calculate portfolios
+    # Calculate portfolios
+    results = pd.DataFrame(columns=['ret', 'vol', 'sharpe']+assets)
 
     for i in range(numPortfolios):
-        #Draw numAssets random numbers and normalize them to be the portfolio weights
+        # Draw numAssets random numbers and normalize them to be the portfolio weights
 
         weights = np.random.random(numAssets)
         weights /= np.sum(weights)
 
-        #Calculate expected return and volatility of portfolio
+        # Calculate expected return and volatility of portfolio
 
-        pret, pvar = calcPortfolioPerf(weights, meanDailyReturns, covMatrix, periods)
+        pret, pvar = calcPortfolioPerf(
+            weights, meanDailyReturns, covMatrix, periods)
 
-        #Convert results to annual basis, calculate Sharpe Ratio, and store them
+        # Convert results to annual basis, calculate Sharpe Ratio, and store them
 
-        results[0,i] = pret
-        results[1,i] = pvar
-        results[2,i] = (results[0,i] - riskFreeRate)/results[1,i]
+        # results[0,i] = pret
+        # results[1,i] = pvar
+        # results[2,i] = (results[0,i] - riskFreeRate)/results[1,i]
+
+        results.loc[i, 'ret'] = pret
+        results.loc[i, 'vola'] = pvar
+        results.loc[i, 'sharpe'] = (pret - riskFreeRate)/pvar
+        for j in range(0, len(weights)):
+            results.iloc[i, j+3] = weights[j]
 
     return results, meanDailyReturns, covMatrix
 
@@ -198,12 +207,13 @@ def do_mc_randomwalk(pct_ret, num_mc_runs, num_years, riskFreeRate, periods):
     vol = sigma * math.sqrt(252)
     #print(mu, vol)
 
-    ### MONTECARLO random walk
+    # MONTECARLO random walk
     mc_runs = pd.DataFrame()
 
     for i in range(num_mc_runs):
         # create list of daily returns using random normal distribution
-        daily_returns = np.random.normal((mu/periods), vol/math.sqrt(periods), periods * num_years)
+        daily_returns = np.random.normal(
+            (mu/periods), vol/math.sqrt(periods), periods * num_years)
 
         random_walk = [1.0]
         for x in daily_returns:
@@ -218,5 +228,5 @@ def do_mc_randomwalk(pct_ret, num_mc_runs, num_years, riskFreeRate, periods):
     ann_mc_returns = mc_runs_returns.add(1).prod() ** (periods / D) - 1
     vol_mc_returns = mc_runs_returns.std() * math.sqrt(periods)
     sharpe_mc_runs = (ann_mc_returns - riskFreeRate) / vol_mc_returns
-    
+
     return mc_runs, ann_mc_returns, vol_mc_returns, sharpe_mc_runs
